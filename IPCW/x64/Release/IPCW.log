@@ -1,4 +1,4 @@
-﻿Build started 08/04/2015 01:26:04.
+﻿Build started 08/04/2015 01:32:56.
      1>Project "C:\Users\yep\documents\visual studio 2013\Projects\IPCW\IPCW\IPCW.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /IE:\opencv\build\include /I"C:\Users\yep\Documents\Visual Studio 2013\Projects\IPCW\IPCW" /Zi /nologo /W3 /WX- /sdl /MP /O2 /Oi /GL /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /openmp /Fo"x64\Release\\" /Fd"x64\Release\vc120.pdb" /Gd /TP /errorReport:prompt ..\x64\Debug\main.cpp
@@ -17,4 +17,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.73
+Time Elapsed 00:00:02.92

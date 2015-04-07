@@ -439,7 +439,7 @@ int main(int argc, char* argv[])
 	VideoCapture capture(1);
 	
 	Comms* connection = new Comms();
-	/*while (!connection->Setup())
+	while (!connection->Setup())
 	{
 	}
 
