@@ -235,7 +235,7 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 			bl.y += contours_poly[3].y;
 			br.y += contours_poly[2].y;
 			*/
-			std::fstream myfile("E:\\data.txt", std::ios_base::in);
+			std::fstream myfile("data.txt", std::ios_base::in);
 			std::vector<Point2f> quad_pts;
 			std::vector<Point2f> squre_pts;
 
@@ -439,7 +439,7 @@ int main(int argc, char* argv[])
 	VideoCapture capture(1);
 	
 	Comms* connection = new Comms();
-	while (!connection->Setup())
+	/*while (!connection->Setup())
 	{
 	}
 
