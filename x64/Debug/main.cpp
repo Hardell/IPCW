@@ -337,7 +337,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 		{
 			cv::approxPolyDP(data, contours_poly,
 			cv::arcLength(data, true) * 0.02, true);
-			if (contours_poly.size() == 4 && isContourConvex(contours_poly))
+			if ((contours_poly.size() == 4) && isContourConvex(contours_poly))
 			{
 				int blue = contours_poly[0].x * 123 % 256;
 				int green = contours_poly[0].x * 13 % 256;
@@ -353,7 +353,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 				//create a new instance if it's a new turret, or update the old one.
 				bool included = false;
 				for (Turret* t : turrets)
-					if (distance(t->centre, corners_center(data)) <= 40) //if it's close enough to be considered the same turret
+					if (!t->sent && distance(t->centre, corners_center(data)) <= 40) //if it's close enough to be considered the same turret
 					{
 						int angle = getAngle(contours_poly);
 						putText(transformed, std::to_string(angle), contours_poly[3], FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(0, 0, 0), 1, CV_AA);
@@ -390,22 +390,22 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 		//draw turret centres and mark old ones to be removed.
 		for (Turret* t : turrets)
 		{
-			/*if (time(0) - t->time > 2)
+			if (!t->sent && time(0) - t->time > 2)
 			{
 				t->toBeRemoved = true;
-				sendUpdate = true;
+				//sendUpdate = true;
 				//message += "DEL_" + std::to_string(t->ID) + "|";
 				continue;
-			}*/
+			}
 			circle(transformed, t->centre, 2, Scalar(255, 0, 0), 2);
 			putText(transformed, std::to_string(t->ID), t->centre,
 				FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(200, 200, 250), 1, CV_AA);
 		}
 		//remove old turrets
-		/*turrets.erase(
+		turrets.erase(
 			std::remove_if(turrets.begin(), turrets.end(), IsMarkedToDelete),
 			turrets.end());
-		*/
+		
 
 		//show frames 
 		imshow("quadrilateral", transformed);
@@ -436,7 +436,7 @@ int main(int argc, char* argv[])
 	Mat transmtx;	//trained transform matrix
 	Mat cameraFeed; //frame
 	//video capture object to acquire webcam feed
-	VideoCapture capture(1);
+	VideoCapture capture(0);
 	
 	Comms* connection = new Comms();
 	while (!connection->Setup())
