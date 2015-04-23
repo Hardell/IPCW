@@ -353,7 +353,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 				//create a new instance if it's a new turret, or update the old one.
 				bool included = false;
 				for (Turret* t : turrets)
-					if (!t->sent && distance(t->centre, corners_center(data)) <= 40) //if it's close enough to be considered the same turret
+					if (distance(t->centre, corners_center(data)) <= 40) //if it's close enough to be considered the same turret
 					{
 						int angle = getAngle(contours_poly);
 						putText(transformed, std::to_string(angle), contours_poly[3], FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(0, 0, 0), 1, CV_AA);
@@ -363,7 +363,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 							t->centre = corners_center(data);
 							t->time = time(0);
 						}
-						else if (t->angle - angle >= 4) {
+						else if (t->angle - angle >= 7) {
 							t->angle = angle;
 							t->time = time(0);
 						}
@@ -409,7 +409,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 
 		//show frames 
 		imshow("quadrilateral", transformed);
-		//imshow(windowName1, HSV);
+		imshow(windowName1, HSV);
 		imshow("thr", threshold);
 		//imshow("src", cameraFeed);
 		if (sendUpdate)
