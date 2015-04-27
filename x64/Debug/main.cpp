@@ -38,6 +38,15 @@ int S_MAX = 256;
 int V_MIN = 0;
 int V_MAX = 256;
 int SIZE_MIN = 0;
+int globalTLX = 25;
+int globalTLY = 25;
+int globalTRX = 25;
+int globalTRY = 25;
+int globalBLX = 25;
+int globalBLY = 25;
+int globalBRX = 25;
+int globalBRY = 25;
+int shittyGlobalCounterButIDontCareILoveIt = 0;
 //default capture width and height
 const int FRAME_WIDTH = 1280;
 const int FRAME_HEIGHT = 720;
@@ -51,6 +60,39 @@ const string windowName3 = "After Morphological Operations";
 const string trackbarWindowName = "Trackbars";
 //PI
 const double PI = 3.141592653589793238463;
+
+//yo
+void onmouse(int event, int x, int y, int flags, void* userdata)
+{
+	if (event == 1) //left click
+	{
+		if (shittyGlobalCounterButIDontCareILoveIt == 0)
+		{
+			globalTLX = x;
+			globalTLY = y;
+			shittyGlobalCounterButIDontCareILoveIt++;
+		}
+		else if (shittyGlobalCounterButIDontCareILoveIt == 1)
+		{
+			globalTRX = x;
+			globalTRY = y;
+			shittyGlobalCounterButIDontCareILoveIt++;
+		}
+		else if (shittyGlobalCounterButIDontCareILoveIt == 2)
+		{
+			globalBLX = x;
+			globalBLY = y;
+			shittyGlobalCounterButIDontCareILoveIt++;
+		}
+		else if (shittyGlobalCounterButIDontCareILoveIt == 3)
+		{
+			globalBRX = x;
+			globalBRY = y;
+			shittyGlobalCounterButIDontCareILoveIt=0;
+		}
+	}
+}
+
 void on_trackbar(int, void*)
 {//This function gets called whenever a
 	// trackbar position is changed
@@ -241,6 +283,20 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 
 			int a;
 			int first = NULL;
+			
+		/*	quad_pts.push_back(Point2f(globalTLX, globalTLY));
+			circle(cameraFeedOriginal, Point2f(globalTLX, globalTLY), 2, Scalar(255, 0, 0), 2);
+
+			quad_pts.push_back(Point2f(globalTRX, globalTRY));
+			circle(cameraFeedOriginal, Point2f(globalTRX, globalTRY), 2, Scalar(255, 0, 0), 2);
+
+			quad_pts.push_back(Point2f(globalBLX, globalBLY));
+			circle(cameraFeedOriginal, Point2f(globalBLX, globalBLY), 2, Scalar(255, 0, 0), 2);
+
+			quad_pts.push_back(Point2f(globalBRX, globalBRY));
+			circle(cameraFeedOriginal, Point2f(globalBRX, globalBRY), 2, Scalar(255, 0, 0), 2);
+
+			*/
 			while (myfile >> a)
 			{
 				if (first != NULL)
@@ -318,10 +374,15 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 	vector<char> message;
 	time_t lastUpdate = time(0);
 	int counter = 0;
+	//int frame_width = capture.get(CV_CAP_PROP_FRAME_WIDTH);
+	//int frame_height = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
+	//VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, Size(frame_width, frame_height), true);
+
 
 	while (!_kbhit())
 	{
 		capture.read(cameraFeed);
+		//video.write(cameraFeed);
 		warpPerspective(cameraFeed, transformed, transmtx, transformed.size());
 		//HSV slider values.
 		cvtColor(transformed, HSV, COLOR_BGR2HSV);
@@ -353,7 +414,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 				//create a new instance if it's a new turret, or update the old one.
 				bool included = false;
 				for (Turret* t : turrets)
-					if (distance(t->centre, corners_center(data)) <= 40) //if it's close enough to be considered the same turret
+					if (distance(t->centre, corners_center(data)) <= 20) //if it's close enough to be considered the same turret
 					{
 						int angle = getAngle(contours_poly);
 						putText(transformed, std::to_string(angle), contours_poly[3], FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(0, 0, 0), 1, CV_AA);
@@ -390,7 +451,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 		//draw turret centres and mark old ones to be removed.
 		for (Turret* t : turrets)
 		{
-			if (!t->sent && time(0) - t->time > 2)
+			if (!t->sent && time(0) - t->time > 1)
 			{
 				t->toBeRemoved = true;
 				//sendUpdate = true;
@@ -457,6 +518,8 @@ int main(int argc, char* argv[])
 		connection->Send(command);
 	}*/
 	createTrackbars();
+	namedWindow("src");
+	setMouseCallback("src", onmouse, NULL); // pass address of img here
 	//open capture object at location zero (default location for webcam)
 	capture.open(0);
 	//set height and width of capture frame
