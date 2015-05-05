@@ -25,6 +25,7 @@
 #include "Turret.h"
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 #include <windows.h>
 
@@ -36,8 +37,8 @@ int H_MAX = 256;
 int S_MIN = 0;
 int S_MAX = 256;
 int V_MIN = 0;
-int V_MAX = 256;
-int SIZE_MIN = 0;
+int V_MAX = 100;
+int SIZE_MIN = 250;
 int globalTLX = 25;
 int globalTLY = 25;
 int globalTRX = 25;
@@ -60,8 +61,17 @@ const string windowName3 = "After Morphological Operations";
 const string trackbarWindowName = "Trackbars";
 //PI
 const double PI = 3.141592653589793238463;
+int state = 0;
 
 //yo
+void receiveTask(Comms* connection)
+{
+	while (true)
+	{
+		connection->Receive2(&state);
+	}
+}
+
 void onmouse(int event, int x, int y, int flags, void* userdata)
 {
 	if (event == 1) //left click
@@ -122,7 +132,7 @@ void createTrackbars(){
 	createTrackbar("S_MIN", trackbarWindowName, &S_MIN, S_MAX, on_trackbar);
 	createTrackbar("S_MAX", trackbarWindowName, &S_MAX, S_MAX, on_trackbar);
 	createTrackbar("V_MIN", trackbarWindowName, &V_MIN, V_MAX, on_trackbar);
-	createTrackbar("V_MAX", trackbarWindowName, &V_MAX, V_MAX, on_trackbar);
+	createTrackbar("V_MAX", trackbarWindowName, &V_MAX, 255, on_trackbar);
 	createTrackbar("SIZE_MIN", trackbarWindowName, &SIZE_MIN, 5000, on_trackbar);
 }
 
@@ -358,11 +368,11 @@ int getAngle(vector<Point> &contours_poly) {
 
 void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 {
-	while (!_kbhit())
-	{
-		waitKey(30);
-	}
-	_getch();
+	//while (!_kbhit())
+	//{
+	//	waitKey(30);
+	//}
+	//_getch();
 	printf("detection starting.\n");
 	Mat cameraFeed; //frame
 	Mat threshold;
@@ -379,7 +389,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 	//VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, Size(frame_width, frame_height), true);
 
 
-	while (!_kbhit())
+	while (state==1)
 	{
 		capture.read(cameraFeed);
 		//video.write(cameraFeed);
@@ -414,6 +424,9 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 				//create a new instance if it's a new turret, or update the old one.
 				bool included = false;
 				for (Turret* t : turrets)
+				{
+					if (t->sent)
+						t->time = time(0);
 					if (distance(t->centre, corners_center(data)) <= 20) //if it's close enough to be considered the same turret
 					{
 						int angle = getAngle(contours_poly);
@@ -424,12 +437,12 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 							t->centre = corners_center(data);
 							t->time = time(0);
 						}
-						else if (t->angle - angle >= 7) {
+						/*else if (t->angle - angle >= 7) {
 							t->angle = angle;
 							t->time = time(0);
-						}
-						else if(time(0) - t->time >= 2 && t->sent!=true) { //if distance and angle didn't change for 2 sec
-							message.push_back(abs(100-(int)((double)t->centre.x * 100.0 / (double)TRACKED_WIDTH)));
+							}*/
+						else if (time(0) - t->time >= 1 && t->sent != true) { //if distance and angle didn't change for 2 sec
+							message.push_back(abs(100 - (int)((double)t->centre.x * 100.0 / (double)TRACKED_WIDTH)));
 							message.push_back(abs(100 - (int)((double)t->centre.y * 100.0 / (double)TRACKED_HEIGHT)));
 							message.push_back(t->angle);
 							sendUpdate = true;
@@ -437,6 +450,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 						}
 						break;
 					}
+				}
 				if (!included) // if it's a new turret, create an instance and message the engine
 				{
 					int angle = getAngle(contours_poly);
@@ -446,14 +460,20 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 					std::cout << " new " << counter++ <<"\n";
 				}
 			}
-			
 		}
 		//draw turret centres and mark old ones to be removed.
 		for (Turret* t : turrets)
 		{
-			if (!t->sent && time(0) - t->time > 1)
+			if (/*!t->sent && */time(0) - t->time > 1)
 			{
 				t->toBeRemoved = true;
+				if (t->sent)
+				{
+					message.push_back(abs(100 - (int)((double)t->centre.x * 100.0 / (double)TRACKED_WIDTH)));
+					message.push_back(abs(100 - (int)((double)t->centre.y * 100.0 / (double)TRACKED_HEIGHT)));
+					message.push_back(99);
+					sendUpdate = true;
+				}
 				//sendUpdate = true;
 				//message += "DEL_" + std::to_string(t->ID) + "|";
 				continue;
@@ -470,7 +490,7 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 
 		//show frames 
 		imshow("quadrilateral", transformed);
-		imshow(windowName1, HSV);
+		//imshow(windowName1, HSV);
 		imshow("thr", threshold);
 		//imshow("src", cameraFeed);
 		if (sendUpdate)
@@ -487,7 +507,16 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 		}
 		waitKey(30);
 	}
-	_getch(); // clear the cin buffer
+	for (Turret* t : turrets)
+	{
+		t->toBeRemoved = true;
+	}
+	//remove turrets
+	turrets.erase(
+		std::remove_if(turrets.begin(), turrets.end(), IsMarkedToDelete),
+		turrets.end());
+
+	//_getch(); // clear the cin buffer
 	return;
 }
 
@@ -531,7 +560,25 @@ int main(int argc, char* argv[])
 		capture.read(cameraFeed);
 	} while (cameraFeed.empty());
 	trainPerspective(capture, transmtx);
-	detect(capture, transmtx, connection);
-	
+	std::thread t1(receiveTask, connection);
+	while (true)
+	{
+		while (state == 0)
+		{
+			Sleep(1000);
+			std::cout <<state << " state = Sleeping, waiting for the game to start. \n";
+		}
+		Sleep(3000);
+		detect(capture, transmtx, connection);
+		connection->Close();
+		connection = new Comms();
+		while (!connection->Setup())
+		{
+		}
+		//connection->Receive();
+		char handShake[5] = { '1', '0', '0', '0', '0' };
+		connection->Send(handShake); // let the server know this is the vision connection
+		printf("handshake sent");
+	}
 	return 0;
 }

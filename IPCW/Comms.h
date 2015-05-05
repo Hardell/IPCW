@@ -9,7 +9,8 @@ public:
 	bool Setup();
 	void Send(char*);
 	void SendTowerData(std::vector<char>& message);
-	void Receive();
+	bool Receive();
+	void Receive2(int*);
 	void Close();
 };
 

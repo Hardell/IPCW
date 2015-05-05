@@ -110,6 +110,28 @@ void Comms::Receive()
 	}
 }
 
+void Comms::Receive2(int* state)
+{
+
+	iResult = recv(ConnectSocket, recvbuf, DEFAULT_BUFLEN, 0);
+	if (iResult > 0){
+		std::cout << "Message recieved: " << (int)recvbuf[0] << "\n";
+		if ((int)recvbuf[0] == 0 || (int)recvbuf[0] == 1)
+			*state = (int)recvbuf[0];
+
+		//std::cout << "Message recieved: " << *state << " " << state;
+	}
+	else if (iResult == 0){
+//		std::cout << "Closing connection... " << std::endl;
+	}
+	else{
+		//std::cout << "Recieving failed.\nError code: " << WSAGetLastError() << std::endl;
+		//closesocket(ConnectSocket);
+		//WSACleanup();
+		return;
+	}
+}
+
 void Comms::Send(char* message)
 {
 	iResult = send(ConnectSocket, message, 5, 0);
