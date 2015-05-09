@@ -36,8 +36,8 @@ int H_MIN = 0;
 int H_MAX = 256;
 int S_MIN = 0;
 int S_MAX = 256;
-int V_MIN = 0;
-int V_MAX = 100;
+int V_MIN = 140;
+int V_MAX = 255;
 int SIZE_MIN = 250;
 int globalTLX = 25;
 int globalTLY = 25;
@@ -52,7 +52,7 @@ int shittyGlobalCounterButIDontCareILoveIt = 0;
 const int FRAME_WIDTH = 1280;
 const int FRAME_HEIGHT = 720;
 const int TRACKED_WIDTH = 860;
-const int TRACKED_HEIGHT = 480;
+const int TRACKED_HEIGHT = 645;
 //names that will appear at the top of each window
 const string windowName = "Original Image";
 const string windowName1 = "HSV Image";
@@ -131,7 +131,7 @@ void createTrackbars(){
 	createTrackbar("H_MAX", trackbarWindowName, &H_MAX, H_MAX, on_trackbar);
 	createTrackbar("S_MIN", trackbarWindowName, &S_MIN, S_MAX, on_trackbar);
 	createTrackbar("S_MAX", trackbarWindowName, &S_MAX, S_MAX, on_trackbar);
-	createTrackbar("V_MIN", trackbarWindowName, &V_MIN, V_MAX, on_trackbar);
+	createTrackbar("V_MIN", trackbarWindowName, &V_MIN, 255, on_trackbar);
 	createTrackbar("V_MAX", trackbarWindowName, &V_MAX, 255, on_trackbar);
 	createTrackbar("SIZE_MIN", trackbarWindowName, &SIZE_MIN, 5000, on_trackbar);
 }
@@ -244,7 +244,7 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 		waitKey(30);
 	}
 	_getch(); // clear the cin buffer
-
+	////////V_MINV_MINV_MINV_MINV_MINV_MIN
 	//train until keyPressed
 	while (!_kbhit())
 	{
@@ -254,7 +254,7 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 		cvtColor(cameraFeed, HSV, COLOR_BGR2HSV);
 		inRange(HSV, Scalar(H_MIN, S_MIN, V_MIN), Scalar(H_MAX, S_MAX, V_MAX), threshold);
 
-		/*vector< vector <Point> > contours; // Vector for storing contour
+		vector< vector <Point> > contours; // Vector for storing contour
 		vector< Vec4i > hierarchy;
 		int largest_contour_index = 0;
 		int largest_area = 0;
@@ -275,9 +275,9 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 
 		vector<Point> contours_poly;
 		approxPolyDP(Mat(contours[largest_contour_index]), contours_poly, 5, true);
-		*/
-		//if (contours_poly.size() == 4){
-			/*counter++;
+		
+		if (contours_poly.size() == 4){
+			counter++;
 			tl.x += contours_poly[0].x;
 			tr.x += contours_poly[1].x;
 			bl.x += contours_poly[3].x;
@@ -286,13 +286,13 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 			tr.y += contours_poly[1].y;
 			bl.y += contours_poly[3].y;
 			br.y += contours_poly[2].y;
-			*/
-			std::fstream myfile("data.txt", std::ios_base::in);
+			
+			//std::fstream myfile("data.txt", std::ios_base::in);
 			std::vector<Point2f> quad_pts;
 			std::vector<Point2f> squre_pts;
 
-			int a;
-			int first = NULL;
+		/*	int a;
+			int first = NULL;*/
 			
 		/*	quad_pts.push_back(Point2f(globalTLX, globalTLY));
 			circle(cameraFeedOriginal, Point2f(globalTLX, globalTLY), 2, Scalar(255, 0, 0), 2);
@@ -307,7 +307,7 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 			circle(cameraFeedOriginal, Point2f(globalBRX, globalBRY), 2, Scalar(255, 0, 0), 2);
 
 			*/
-			while (myfile >> a)
+			/*while (myfile >> a)
 			{
 				if (first != NULL)
 				{
@@ -318,13 +318,13 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 				}
 				else
 					first = a;
-			}
+			}*/
 
 
-		/*	quad_pts.push_back(Point2f(tl.x / counter, tl.y / counter));
+			quad_pts.push_back(Point2f(tl.x / counter, tl.y / counter));
 			quad_pts.push_back(Point2f(tr.x / counter, tr.y / counter));
 			quad_pts.push_back(Point2f(br.x / counter, br.y / counter));
-			quad_pts.push_back(Point2f(bl.x / counter, bl.y / counter));*/
+			quad_pts.push_back(Point2f(bl.x / counter, bl.y / counter));
 
 			sort_rect_corners(quad_pts);
 
@@ -344,7 +344,7 @@ void trainPerspective(VideoCapture capture, Mat &transmtx)
 			//imshow("thr", threshold);
 			imshow("src", cameraFeedOriginal);
 
-		//}
+		}
 		waitKey(30);
 	}
 	_getch(); // clear the cin buffer
@@ -358,12 +358,13 @@ bool IsMarkedToDelete(const Turret* o)
 }
 
 int getAngle(vector<Point> &contours_poly) {
-	auto centre = corners_center(contours_poly);//get centre
-	auto corner = contours_poly[3]; // get upper right corner.
+	auto centre = contours_poly[0];
+		// corners_center(contours_poly);//get centre
+	auto corner = contours_poly[2]; // get upper right corner.
 	int deltaY = corner.y - centre.y;
 	int deltaX = corner.x - centre.x;
 	int angle = abs(int(atan((double)deltaY / (double)deltaX) * 180 / PI)); //calculate the angle
-	return (angle+45)%90;
+	return (angle-45+720)%180;
 }
 
 void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
@@ -384,6 +385,8 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 	vector<char> message;
 	time_t lastUpdate = time(0);
 	int counter = 0;
+	V_MIN = 0;
+	V_MAX = 90;
 	//int frame_width = capture.get(CV_CAP_PROP_FRAME_WIDTH);
 	//int frame_height = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
 	//VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, Size(frame_width, frame_height), true);
@@ -441,9 +444,9 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 							t->angle = angle;
 							t->time = time(0);
 							}*/
-						else if (time(0) - t->time >= 1 && t->sent != true) { //if distance and angle didn't change for 2 sec
-							message.push_back(abs(100 - (int)((double)t->centre.x * 100.0 / (double)TRACKED_WIDTH)));
-							message.push_back(abs(100 - (int)((double)t->centre.y * 100.0 / (double)TRACKED_HEIGHT)));
+						else if (time(0) - t->time >= 2 && t->sent != true) { //if distance and angle didn't change for 2 sec
+							message.push_back(abs(255 - (int)((double)t->centre.x * 255.0 / (double)TRACKED_WIDTH)));
+							message.push_back(abs(255 - (int)((double)t->centre.y * 255.0 / (double)TRACKED_HEIGHT)));
 							message.push_back(t->angle);
 							sendUpdate = true;
 							t->sent = true;
@@ -464,18 +467,18 @@ void detect(VideoCapture capture, Mat &transmtx, Comms* connection)
 		//draw turret centres and mark old ones to be removed.
 		for (Turret* t : turrets)
 		{
-			if (/*!t->sent && */time(0) - t->time > 1)
+			if (!t->sent && time(0) - t->time >= 2)
 			{
 				t->toBeRemoved = true;
-				if (t->sent)
-				{
-					message.push_back(abs(100 - (int)((double)t->centre.x * 100.0 / (double)TRACKED_WIDTH)));
-					message.push_back(abs(100 - (int)((double)t->centre.y * 100.0 / (double)TRACKED_HEIGHT)));
-					message.push_back(99);
-					sendUpdate = true;
-				}
-				//sendUpdate = true;
-				//message += "DEL_" + std::to_string(t->ID) + "|";
+				//if (t->sent)
+				//{
+					//message.push_back(abs(100 - (int)((double)t->centre.x * 100.0 / (double)tracked_width)));
+					//message.push_back(abs(100 - (int)((double)t->centre.y * 100.0 / (double)tracked_height)));
+					//message.push_back(99);
+					//sendupdate = true;
+				//}
+				//sendupdate = true;
+				//message += "del_" + std::to_string(t->id) + "|";
 				continue;
 			}
 			circle(transformed, t->centre, 2, Scalar(255, 0, 0), 2);
@@ -559,18 +562,20 @@ int main(int argc, char* argv[])
 	{
 		capture.read(cameraFeed);
 	} while (cameraFeed.empty());
-	trainPerspective(capture, transmtx);
+	//trainPerspective(capture, transmtx);
 	std::thread t1(receiveTask, connection);
 	while (true)
 	{
 		while (state == 0)
 		{
-			Sleep(1000);
-			std::cout <<state << " state = Sleeping, waiting for the game to start. \n";
+			Sleep(500);
+			std::cout <<state << "Sleeping, waiting for instructions. \n";
 		}
-		Sleep(3000);
-		detect(capture, transmtx, connection);
-		connection->Close();
+		if (state == 1)
+			detect(capture, transmtx, connection);
+		else if (state == 2)
+			trainPerspective(capture, transmtx);
+		/*connection->Close();
 		connection = new Comms();
 		while (!connection->Setup())
 		{
@@ -578,7 +583,7 @@ int main(int argc, char* argv[])
 		//connection->Receive();
 		char handShake[5] = { '1', '0', '0', '0', '0' };
 		connection->Send(handShake); // let the server know this is the vision connection
-		printf("handshake sent");
+		printf("handshake sent");*/
 	}
 	return 0;
 }
